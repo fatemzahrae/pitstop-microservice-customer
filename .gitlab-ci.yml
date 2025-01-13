@@ -3,9 +3,18 @@ services:
     - docker:dind
 
 stages:
+  - test
   - build
   - push
   - deploy
+
+test-runner:
+  stage: test
+  tags:
+    - docker
+  script:
+    - echo "Runner is working!"
+    - uname -a
 
 build:
   stage: build
