@@ -56,8 +56,8 @@ deploy:
     - git config --global user.email "gitlab@example.com"
     - git config --global user.name "GitLab CI"
     - git clone https://github.com/fatemzahrae/Customer-KubernetesFiles.git
-    - cd Customer-KubernetesFiles
-    - yq e -i '.spec.template.spec.containers[0].image = "fatemzahrae/Customer-KubernetesFiles:'$CI_COMMIT_SHORT_SHA'"' pitstop-customer-depl.yaml
+    - cd Customer-KubernetesFiles/k8s
+    - yq e -i '.spec.template.spec.containers[0].image = "fatemzahra/pitstop-customer:'$CI_COMMIT_SHORT_SHA'"' pitstop-customer-depl.yaml
     - git add .
     - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
     - git push https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git HEAD:main
