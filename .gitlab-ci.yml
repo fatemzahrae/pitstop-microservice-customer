@@ -5,37 +5,25 @@ services:
 cache:
   key: "$CI_COMMIT_REF_SLUG"
   paths:
-    - node_modules/     
-    - images/           
+    - pitstop-customer/node_modules/
+    - images/
   policy: pull-push
 
 stages:
-  - test
   - build
   - push
   - deploy
-  - cleanup
-
-
-
-test-runner:
-  stage: test
-  tags:
-    - docker
-  script:
-    - echo "Runner is working!"
-    - uname -a
-  rules:
-    - if: '$CI_COMMIT_BRANCH =~ /^feature\/.*$/'  
-    - if: '$CI_MERGE_REQUEST_ID'                  
-    - when: never 
 
 build:
   stage: build
   tags:
-    - docker 
+    - docker
   variables:
     DOCKER_TLS_CERTDIR: ""
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - pitstop-customer/node_modules/
   script:
     - cd pitstop-customer 
     - docker build -t fatemzahra/pitstop-customer:$CI_COMMIT_SHORT_SHA . 
@@ -106,15 +94,4 @@ deploy:
     - push
   variables:
     GIT_STRATEGY: clone
-
-cleanup:
-  stage: cleanup
-  script:
-    - docker rmi $(docker images -q) || true
-    - rm -rf images/
-  when: always
-  rules:
-    - when: always
-  needs:
-    - build
 
