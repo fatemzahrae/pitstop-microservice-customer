@@ -68,6 +68,8 @@ deploy:
     # on synchroniser les modifications avec le dépôt GitLab
     - cd ..
     - git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/aseds6001802/customer-kubernetesfiles.git
+    - git fetch gitlab main
+    - git merge gitlab/main --no-edit
     - git push gitlab main
   only:
     - main
