@@ -53,17 +53,24 @@ deploy:
     - curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     - chmod +x /usr/local/bin/yq
   script:
-    - git config --global user.email "gitlab@example.com"
-    - git config --global user.name "GitLab CI"
+    # on cloner le dépôt GitHub 
     - git clone https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git
     - cd Customer-KubernetesFiles/k8s
+
+    # on Modifie les fichiers YAML 
     - yq e -i '.spec.template.spec.containers[0].image = "fatemzahra/pitstop-customer:'$CI_COMMIT_SHORT_SHA'"' pitstop-customer-depl.yaml
     - git add .
     - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
     - git push https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git HEAD:main
+
+    # on synchroniser les modifications avec le dépôt GitLab
+    - cd ..
+    - git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/aseds6001802/customer-kubernetesfiles.git
+    - git push gitlab main
   only:
     - main
   needs:
     - push
   variables:
     GIT_STRATEGY: clone
+
