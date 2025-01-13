@@ -1,13 +1,5 @@
-image: docker:latest
-services:
-    - docker:dind
-
-cache:
-  key: "$CI_COMMIT_REF_SLUG"
-  paths:
-    - pitstop-customer/node_modules/
-    - images/
-  policy: pull-push
+include:
+  - local: ci-templates.yml
 
 stages:
   - build
@@ -15,83 +7,27 @@ stages:
   - deploy
 
 build:
-  stage: build
-  tags:
-    - docker
+  extends: .build-job-template
   variables:
-    DOCKER_TLS_CERTDIR: ""
-  cache:
-    key: "$CI_COMMIT_REF_SLUG"
-    paths:
-      - pitstop-customer/node_modules/
-  script:
-    - cd pitstop-customer 
-    - docker build -t fatemzahra/pitstop-customer:$CI_COMMIT_SHORT_SHA . 
-    - cd .. 
-    - mkdir -p images
-    - docker save fatemzahra/pitstop-customer:$CI_COMMIT_SHORT_SHA > images/image.tar
-  artifacts:
-    paths:
-      - images/image.tar
-    expire_in: 1 hour
+    DOCKER_IMAGE_NAME: "fatemzahra/pitstop-customer"
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-    - if: '$CI_MERGE_REQUEST_ID'
-      when: manual
-    - when: never
-
 
 push:
-  stage: push
+  extends: .push-job-template
   variables:
-    DOCKER_TLS_CERTDIR: ""
-  before_script:
-    - echo "$DOCKER_HUB_PASSWORD" | docker login -u "fatemzahra" --password-stdin
-  script:
-    - docker load < images/image.tar
-    - docker push fatemzahra/pitstop-customer:$CI_COMMIT_SHORT_SHA
-    - | 
-      if [ "$CI_COMMIT_BRANCH" == "main" ]; then
-        docker tag fatemzahra/pitstop-customer:$CI_COMMIT_SHORT_SHA fatemzahra/pitstop-customer:latest
-        docker push fatemzahra/pitstop-customer:latest
-      fi
+    DOCKER_IMAGE_NAME: "fatemzahra/pitstop-customer"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'          
+    - if: '$CI_COMMIT_BRANCH == "main"'
   needs:
     - build
 
 deploy:
-  stage: deploy
-  image: alpine:latest
-  before_script:
-    - apk add --no-cache git curl
-    - curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-    - chmod +x /usr/local/bin/yq
-    - git config --global user.email "gitlab-ci@example.com" 
-    - git config --global user.name "GitLab CI"   
-  script:
-    # on clone le dépôt GitHub 
-    - git clone https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git
-    - cd Customer-KubernetesFiles/k8s
-
-    # on modifie les fichiers YAML 
-    - yq e -i 'select(.kind == "Deployment").spec.template.spec.containers[] |= select(.name == "pitstop-customer").image = "fatemzahra/pitstop-customer:'$CI_COMMIT_SHORT_SHA'"' pitstop-customer-depl.yaml
-
-
-    - git add .
-    - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
-    - git push https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git HEAD:main
-
-    # on synchronise les modifications avec le dépôt GitLab
-    - cd ..
-    - git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/aseds6001802/customer-kubernetesfiles.git
-    - git fetch gitlab main
-    - git merge gitlab/main --no-edit
-    - git push gitlab main
+  extends: .deploy-job-template
+  variables:
+    DOCKER_IMAGE_NAME: "fatemzahra/pitstop-customer"
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_MERGE_REQUEST_ID'
   needs:
     - push
-  variables:
-    GIT_STRATEGY: clone
-
