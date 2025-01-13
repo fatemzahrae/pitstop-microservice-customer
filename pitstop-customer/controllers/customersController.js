@@ -14,6 +14,12 @@ exports.pingPong = (req, res, next) => {
     });
 }
 
+exports.test1 = (req, res, next) => {
+    res.status(resCode.OK).json({
+        message: "La modification s'est effectuée avec succès."
+    });
+}
+
 /* GET /api/customers/all (list all customers) */
 exports.allCustomers = async (req, res, next) => {
     try {
