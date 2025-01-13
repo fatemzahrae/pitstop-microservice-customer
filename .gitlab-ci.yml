@@ -60,7 +60,7 @@ deploy:
     - cd Customer-KubernetesFiles/k8s
 
     # on modifie les fichiers YAML 
-    - yq e -i '.spec.template.spec.containers[] | select(.name == "pitstop-customer") | .image = "fatemzahra/pitstop-customer:'$CI_COMMIT_SHORT_SHA'"' pitstop-customer-depl.yaml
+    - yq e -i '.spec.template.spec.containers[] |= select(.name == "pitstop-customer").image = "fatemzahra/pitstop-customer:'$CI_COMMIT_SHORT_SHA'"' pitstop-customer-depl.yaml
 
     - git add .
     - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
