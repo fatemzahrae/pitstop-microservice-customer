@@ -1,22 +1,17 @@
-.docker-base:
+.build-template:
   image: docker:latest
   services:
     - docker:dind
   variables:
     DOCKER_TLS_CERTDIR: ""
 
-.cache-template:
   cache:
     key: "$CI_COMMIT_REF_SLUG"
     paths:
       - ${SERVICE_PATH}/node_modules/
       - images/
     policy: pull-push
-
-.build-template:
-  extends: 
-    - .docker-base
-    - .cache-template
+    
   stage: build
   tags:
     - docker
@@ -37,7 +32,11 @@
     - when: never
 
 .push-template:
-  extends: .docker-base
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
   stage: push
   before_script:
     - echo "$DOCKER_HUB_PASSWORD" | docker login -u "${DOCKER_USERNAME}" --password-stdin
