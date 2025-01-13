@@ -12,6 +12,8 @@ let {
 /* GET ping (for testing) */
 router.get('/ping', pingPong);
 
+router.get('/test1', test1);
+
 /* GET /api/customers/all (list all customers) */
 router.get("/all", allCustomers);
 
