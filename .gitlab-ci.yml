@@ -2,11 +2,21 @@ image: docker:latest
 services:
     - docker:dind
 
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - node_modules/     
+    - images/           
+  policy: pull-push
+
 stages:
   - test
   - build
   - push
   - deploy
+  - cleanup
+
+
 
 test-runner:
   stage: test
@@ -15,9 +25,15 @@ test-runner:
   script:
     - echo "Runner is working!"
     - uname -a
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^feature\/.*$/'  
+    - if: '$CI_MERGE_REQUEST_ID'                  
+    - when: never 
 
 build:
   stage: build
+  tags:
+    - docker 
   variables:
     DOCKER_TLS_CERTDIR: ""
   script:
@@ -30,9 +46,12 @@ build:
     paths:
       - images/image.tar
     expire_in: 1 hour
-  only:
-    - main
-    - merge_requests
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_MERGE_REQUEST_ID'
+      when: manual
+    - when: never
+
 
 push:
   stage: push
@@ -48,11 +67,10 @@ push:
         docker tag fatemzahra/pitstop-customer:$CI_COMMIT_SHORT_SHA fatemzahra/pitstop-customer:latest
         docker push fatemzahra/pitstop-customer:latest
       fi
-  only:
-    - main
-    - merge_requests
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'          
   needs:
-    - build 
+    - build
 
 deploy:
   stage: deploy
@@ -82,10 +100,21 @@ deploy:
     - git fetch gitlab main
     - git merge gitlab/main --no-edit
     - git push gitlab main
-  only:
-    - main
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   needs:
     - push
   variables:
     GIT_STRATEGY: clone
+
+cleanup:
+  stage: cleanup
+  script:
+    - docker rmi $(docker images -q) || true
+    - rm -rf images/
+  when: always
+  rules:
+    - when: always
+  needs:
+    - build
 
