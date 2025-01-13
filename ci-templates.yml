@@ -1,29 +1,37 @@
-default:
+.build-job-template:
+  stage: build
   image: docker:latest
   services:
     - docker:dind
   cache:
     key: "$CI_COMMIT_REF_SLUG"
     paths:
-      - node_modules/
+      - pitstop-customer/node_modules/
       - images/
     policy: pull-push
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-
-.build-job-template:
-  stage: build
   script:
+    - cd pitstop-customer
     - docker build -t $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+    - cd ..
     - mkdir -p images
     - docker save $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA > images/image.tar
   artifacts:
     paths:
       - images/image.tar
     expire_in: 1 hour
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_MERGE_REQUEST_ID'
+      when: manual
+    - when: never
 
 .push-job-template:
   stage: push
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
   before_script:
     - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
   script:
@@ -34,6 +42,8 @@ default:
         docker tag $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA $DOCKER_IMAGE_NAME:latest
         docker push $DOCKER_IMAGE_NAME:latest
       fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 .deploy-job-template:
   stage: deploy
@@ -51,3 +61,10 @@ default:
     - git add .
     - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
     - git push https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git HEAD:main
+    - cd ..
+    - git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/aseds6001802/customer-kubernetesfiles.git
+    - git fetch gitlab main
+    - git merge gitlab/main --no-edit
+    - git push gitlab main
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
