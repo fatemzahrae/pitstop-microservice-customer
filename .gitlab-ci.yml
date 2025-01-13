@@ -1,5 +1,15 @@
+
 include:
-  - local: ci-templates.yml
+  - local: 'ci-templates.yml'
+
+variables:
+  SERVICE_PATH: pitstop-customer
+  SERVICE_NAME: pitstop-customer
+  DOCKER_USERNAME: fatemzahra
+  DOCKER_IMAGE: fatemzahra/pitstop-customer
+  GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
+  GITHUB_REPO_NAME: Customer-KubernetesFiles
+  GITLAB_REPO: aseds6001802/customer-kubernetesfiles
 
 stages:
   - build
@@ -7,27 +17,14 @@ stages:
   - deploy
 
 build:
-  extends: .build-job-template
-  variables: 
-    DOCKER_IMAGE_NAME: "fatemzahra/pitstop-customer"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+  extends: .build-template
 
 push:
-  extends: .push-job-template
-  variables:
-    DOCKER_IMAGE_NAME: "fatemzahra/pitstop-customer"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+  extends: .push-template
   needs:
     - build
 
 deploy:
-  extends: .deploy-job-template
-  variables:
-    DOCKER_IMAGE_NAME: "fatemzahra/pitstop-customer"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-    - if: '$CI_MERGE_REQUEST_ID'
+  extends: .deploy-template
   needs:
     - push
