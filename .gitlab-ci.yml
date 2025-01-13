@@ -52,6 +52,8 @@ deploy:
     - apk add --no-cache git curl
     - curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     - chmod +x /usr/local/bin/yq
+    - git config --global user.email "gitlab-ci@example.com" 
+    - git config --global user.name "GitLab CI"   
   script:
     # on cloner le dépôt GitHub 
     - git clone https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git
