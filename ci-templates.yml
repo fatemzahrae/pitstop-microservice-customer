@@ -1,20 +1,31 @@
-.build-job-template:
-  stage: build
+.docker-base:
   image: docker:latest
   services:
     - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+
+.cache-template:
   cache:
     key: "$CI_COMMIT_REF_SLUG"
     paths:
-      - pitstop-customer/node_modules/
+      - ${SERVICE_PATH}/node_modules/
       - images/
     policy: pull-push
+
+.build-template:
+  extends: 
+    - .docker-base
+    - .cache-template
+  stage: build
+  tags:
+    - docker
   script:
-    - cd pitstop-customer
-    - docker build -t $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+    - cd ${SERVICE_PATH}
+    - docker build -t ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA .
     - cd ..
     - mkdir -p images
-    - docker save $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA > images/image.tar
+    - docker save ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA > images/image.tar
   artifacts:
     paths:
       - images/image.tar
@@ -25,27 +36,23 @@
       when: manual
     - when: never
 
-.push-job-template:
+.push-template:
+  extends: .docker-base
   stage: push
-  image: docker:latest
-  services:
-    - docker:dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
   before_script:
-    - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+    - echo "$DOCKER_HUB_PASSWORD" | docker login -u "${DOCKER_USERNAME}" --password-stdin
   script:
     - docker load < images/image.tar
-    - docker push $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-    - |
+    - docker push ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA
+    - | 
       if [ "$CI_COMMIT_BRANCH" == "main" ]; then
-        docker tag $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA $DOCKER_IMAGE_NAME:latest
-        docker push $DOCKER_IMAGE_NAME:latest
+        docker tag ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA ${DOCKER_IMAGE}:latest
+        docker push ${DOCKER_IMAGE}:latest
       fi
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
-.deploy-job-template:
+.deploy-template:
   stage: deploy
   image: alpine:latest
   before_script:
@@ -55,16 +62,18 @@
     - git config --global user.email "gitlab-ci@example.com"
     - git config --global user.name "GitLab CI"
   script:
-    - git clone https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git
-    - cd Customer-KubernetesFiles/k8s
-    - yq e -i 'select(.kind == "Deployment").spec.template.spec.containers[] |= select(.name == "pitstop-customer").image = "'$DOCKER_IMAGE_NAME':'$CI_COMMIT_SHORT_SHA'"' pitstop-customer-depl.yaml
+    - git clone https://oauth2:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git
+    - cd ${GITHUB_REPO_NAME}/k8s
+    - yq e -i 'select(.kind == "Deployment").spec.template.spec.containers[] |= select(.name == "'${SERVICE_NAME}'").image = "'${DOCKER_IMAGE}':'$CI_COMMIT_SHORT_SHA'"' ${SERVICE_NAME}-depl.yaml
     - git add .
     - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
-    - git push https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git HEAD:main
+    - git push https://oauth2:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git HEAD:main
     - cd ..
-    - git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/aseds6001802/customer-kubernetesfiles.git
+    - git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git
     - git fetch gitlab main
     - git merge gitlab/main --no-edit
     - git push gitlab main
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+  variables:
+    GIT_STRATEGY: clone
