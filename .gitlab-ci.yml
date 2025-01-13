@@ -8,7 +8,7 @@ stages:
 
 build:
   extends: .build-job-template
-  variables:
+  variables: 
     DOCKER_IMAGE_NAME: "fatemzahra/pitstop-customer"
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
