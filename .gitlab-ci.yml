@@ -55,7 +55,7 @@ deploy:
   script:
     - git config --global user.email "gitlab@example.com"
     - git config --global user.name "GitLab CI"
-    - git clone https://github.com/fatemzahrae/Customer-KubernetesFiles.git
+    - git clone https://oauth2:${GITHUB_TOKEN}@github.com/fatemzahrae/Customer-KubernetesFiles.git
     - cd Customer-KubernetesFiles/k8s
     - yq e -i '.spec.template.spec.containers[0].image = "fatemzahra/pitstop-customer:'$CI_COMMIT_SHORT_SHA'"' pitstop-customer-depl.yaml
     - git add .
