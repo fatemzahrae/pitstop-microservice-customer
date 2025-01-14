@@ -1,7 +1,7 @@
 include:
   - local: 'ci-templates.yml'
 
-variables:
+variables: 
   SERVICE_PATH: pitstop-customer
   SERVICE_NAME: pitstop-customer
   DOCKER_USERNAME: fatemzahra
