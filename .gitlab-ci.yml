@@ -23,7 +23,7 @@ pre-commit:
     - pip install pre-commit
   script:
     - pre-commit install
-    - pre-commit run --all-files --hook-stage always
+    - pre-commit run --all-files --hook-stage commit
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
