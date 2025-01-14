@@ -1,6 +1,6 @@
 include:
   - local: 'ci-templates.yml'
-
+ 
 variables: 
   SERVICE_PATH: pitstop-customer
   SERVICE_NAME: pitstop-customer
