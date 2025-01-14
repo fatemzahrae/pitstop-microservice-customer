@@ -1,10 +1,24 @@
+.vault-config: &vault-config
+  before_script:
+    - apt-get update && apt-get install -y curl jq
+    - |
+      # Installation de Vault client
+      curl -o vault.zip https://releases.hashicorp.com/vault/1.13.0/vault_1.13.0_linux_amd64.zip
+      unzip vault.zip
+      mv vault /usr/local/bin/
+      # Obtention des secrets depuis Vault
+      export DOCKER_USERNAME="$(vault kv get -field=DOCKER_USERNAME secret/docker)"
+      export DOCKER_HUB_PASSWORD="$(vault kv get -field=DOCKER_HUB_PASSWORD secret/docker)"
+      export GITHUB_TOKEN="$(vault kv get -field=GITHUB_TOKEN secret/github)"
+      export GITLAB_TOKEN="$(vault kv get -field=GITLAB_TOKEN secret/gitlab)"
+
 .build-template:
   image: docker:latest
   services:
     - docker:dind
   variables:
     DOCKER_TLS_CERTDIR: ""
-
+  <<: *vault-config
   stage: build
   script:
     - cd ${SERVICE_PATH}
@@ -27,10 +41,10 @@
     - docker:dind
   variables:
     DOCKER_TLS_CERTDIR: ""
+  <<: *vault-config
   stage: push
-  before_script:
-    - echo "$DOCKER_HUB_PASSWORD" | docker login -u "${DOCKER_USERNAME}" --password-stdin
   script:
+    - echo "$DOCKER_HUB_PASSWORD" | docker login -u "${DOCKER_USERNAME}" --password-stdin
     - docker load < images/image.tar
     - docker push ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA
     - |
@@ -41,12 +55,12 @@
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
-
 .deploy-template:
   stage: deploy
   image: alpine:latest
   variables:
     GIT_STRATEGY: clone
+  <<: *vault-config
   before_script:
     - apk add --no-cache git curl
     - curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
