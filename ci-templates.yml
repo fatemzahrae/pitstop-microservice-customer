@@ -7,10 +7,10 @@
       unzip vault.zip
       mv vault /usr/local/bin/
       # Obtention des secrets depuis Vault
-      export DOCKER_USERNAME="$(vault kv get -field=DOCKER_USERNAME pitstopsecrets )"
-      export DOCKER_HUB_PASSWORD="$(vault kv get -field=DOCKER_HUB_PASSWORD pitstopsecrets)"
-      export GITHUB_TOKEN="$(vault kv get -field=GITHUB_TOKEN pitstopsecrets )"
-      export GITLAB_TOKEN="$(vault kv get -field=GITLAB_TOKEN pitstopsecrets )"
+      export DOCKER_USERNAME="$(vault kv get -field=DOCKER_USERNAME secret/pitstopsecrets )"
+      export DOCKER_HUB_PASSWORD="$(vault kv get -field=DOCKER_HUB_PASSWORD secret/pitstopsecrets)"
+      export GITHUB_TOKEN="$(vault kv get -field=GITHUB_TOKEN secret/pitstopsecrets )"
+      export GITLAB_TOKEN="$(vault kv get -field=GITLAB_TOKEN secret/pitstopsecrets )"
 
 .build-template:
   image: docker:latest
