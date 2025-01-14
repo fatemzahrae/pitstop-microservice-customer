@@ -11,12 +11,26 @@ variables:
   GITLAB_REPO: aseds6001802/customer-kubernetesfiles
  
 stages:
+  - pre-commit
   - build
   - push
   - deploy
 
+pre-commit:
+  image: python:3.9
+  stage: pre-commit
+  before_script:
+    - pip install pre-commit
+  script:
+    - pre-commit install
+    - pre-commit run --all-files
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
 build:
   extends: .build-template
+  needs:
+    - pre-commit
 
 push:
   extends: .push-template
