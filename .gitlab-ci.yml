@@ -26,4 +26,4 @@ push:
 deploy:
   extends: .deploy-template
   needs:
-    - push
+    - push 
