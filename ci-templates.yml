@@ -1,5 +1,6 @@
 .vault-config: &vault-config
   before_script:
+    - apk add --no-cache curl 
     - echo "Checking Vault server connectivity at $VAULT_SERVER_URL"
     - curl -s $VAULT_SERVER_URL/v1/sys/health || (echo "Vault server is not reachable at $VAULT_SERVER_URL" && exit 1)
 
@@ -11,6 +12,7 @@
     - export DOCKER_HUB_PASSWORD="$(vault kv get -field=DOCKER_HUB_PASSWORD secret/pitstopsecrets || exit 1)"
     - export GITHUB_TOKEN="$(vault kv get -field=GITHUB_TOKEN secret/pitstopsecrets || exit 1)"
     - export GITLAB_TOKEN="$(vault kv get -field=GITLAB_TOKEN secret/pitstopsecrets || exit 1)"
+
 
 
 .build-template:
