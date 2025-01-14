@@ -1,6 +1,6 @@
 .vault-config: &vault-config
   before_script:
-    - apt-get update && apt-get install -y curl jq
+    - apk add --no-cache curl jq unzip
     - |
       # Installation de Vault client
       curl -o vault.zip https://releases.hashicorp.com/vault/1.13.0/vault_1.13.0_linux_amd64.zip
