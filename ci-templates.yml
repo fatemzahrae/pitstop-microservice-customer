@@ -6,6 +6,10 @@
       curl -o vault.zip https://releases.hashicorp.com/vault/1.13.0/vault_1.13.0_linux_amd64.zip
       unzip vault.zip
       mv vault /usr/local/bin/
+      export VAULT_ADDR="${VAULT_ADDR}"
+      export VAULT_TOKEN="${VAULT_TOKEN}"
+      # Authenticate with Vault
+      vault login $VAULT_TOKEN
       # Obtention des secrets depuis Vault
       export DOCKER_USERNAME="$(vault kv get -field=DOCKER_USERNAME secret/pitstopsecrets )"
       export DOCKER_HUB_PASSWORD="$(vault kv get -field=DOCKER_HUB_PASSWORD secret/pitstopsecrets)"
