@@ -60,17 +60,15 @@
     - git config --global user.email "gitlab-ci@example.com"
     - git config --global user.name "GitLab CI"
   script:
-    # Ajout de debug pour vérifier les variables
     - echo "Cloning repository from: https://github.com/${GITHUB_REPO}.git"
-    # Tentative avec HTTPS basic auth
-    - git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git
+    - git clone "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
     - cd ${GITHUB_REPO_NAME}/k8s
     - yq e -i 'select(.kind == "Deployment").spec.template.spec.containers[] |= select(.name == "'${SERVICE_NAME}'").image = "'${DOCKER_IMAGE}':'$CI_COMMIT_SHORT_SHA'"' ${SERVICE_NAME}-depl.yaml
     - git add .
     - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
-    - git push https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git HEAD:main
+    - git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" HEAD:main
     - cd ..
-    - git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git
+    - git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git"
     - git fetch gitlab main
     - git merge gitlab/main --no-edit
     - git push gitlab main
@@ -78,6 +76,5 @@
     - if: '$CI_COMMIT_BRANCH == "main"'
   variables:
     GIT_STRATEGY: clone
-    # Ajout de variables de debug
     GIT_CURL_VERBOSE: "1"
     GIT_TRACE: "1"
