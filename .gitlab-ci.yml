@@ -9,7 +9,7 @@ variables:
   GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
   GITHUB_REPO_NAME: Customer-KubernetesFiles
   GITLAB_REPO: aseds6001802/customer-kubernetesfiles
-
+ 
 stages:
   - build
   - push
