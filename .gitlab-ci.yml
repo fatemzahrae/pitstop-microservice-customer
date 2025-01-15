@@ -15,7 +15,7 @@ variables:
 
 stages:
   - pre-commit
-  - sast
+  - test
   - sca
   - build
   - container-scan
