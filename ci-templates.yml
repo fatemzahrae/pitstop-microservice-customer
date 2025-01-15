@@ -1,9 +1,31 @@
+.vault-config: &vault-config
+  before_script:
+    - apk add --no-cache curl jq unzip
+    - |
+      # Install Vault client
+      curl -o vault.zip https://releases.hashicorp.com/vault/1.13.0/vault_1.13.0_linux_amd64.zip
+      unzip vault.zip
+      mv vault /usr/local/bin/
+      # Set Vault environment variables
+      export VAULT_ADDR="${VAULT_ADDR}"
+      export VAULT_TOKEN="${VAULT_TOKEN}"
+      # Debugging to verify Vault address
+      echo "VAULT_ADDR is set to: $VAULT_ADDR"
+      # Authenticate with Vault
+      vault login $VAULT_TOKEN
+      # Fetch secrets from Vault
+      export DOCKER_USERNAME="$(vault kv get -field=DOCKER_USERNAME secret/pitstopsecrets)"
+      export DOCKER_HUB_PASSWORD="$(vault kv get -field=DOCKER_HUB_PASSWORD secret/pitstopsecrets)"
+      export GITHUB_TOKEN="$(vault kv get -field=GITHUB_TOKEN secret/pitstopsecrets)"
+      export GITLAB_TOKEN="$(vault kv get -field=GITLAB_TOKEN secret/pitstopsecrets)"
+      
 .build-template:
   image: docker:latest
   services:
     - docker:dind
   variables:
     DOCKER_TLS_CERTDIR: ""
+  <<: *vault-config
   stage: build
   script:
     - cd ${SERVICE_PATH}
@@ -26,6 +48,7 @@
     - docker:dind
   variables:
     DOCKER_TLS_CERTDIR: ""
+  <<: *vault-config
   stage: push
   script:
     - echo "$DOCKER_HUB_PASSWORD" | docker login -u "${DOCKER_USERNAME}" --password-stdin
@@ -44,6 +67,7 @@
   image: alpine:latest
   variables:
     GIT_STRATEGY: clone
+  <<: *vault-config
   before_script:
     - apk add --no-cache git curl
     - curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
