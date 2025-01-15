@@ -9,12 +9,13 @@ variables:
   GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
   GITHUB_REPO_NAME: Customer-KubernetesFiles
   GITLAB_REPO: aseds6001802/customer-kubernetesfiles
- 
+  
 stages:
   - pre-commit
   - build
   - push
   - deploy
+
 
 pre-commit:
   image: python:3.9
@@ -23,25 +24,49 @@ pre-commit:
     - pip install pre-commit
   script:
     - pre-commit install
-    - git config --global user.email "ci@bot.com"
-    - git config --global user.name "CI Bot"        
     - pre-commit run --all-files || (git add . && git commit -m "Fix pre-commit issues")
-    - pre-commit run --all-files || (git add . && git commit -m "Fix pre-commit issues")
-
-
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
+
 
 build:
   extends: .build-template
   needs:
     - pre-commit
 
+sast:
+  stage: build
+  image: registry.gitlab.com/gitlab-org/security-products/analyzers/sast:latest
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+sca:
+  stage: build
+  image: registry.gitlab.com/gitlab-org/security-products/analyzers/dependency-scanning:latest
+  artifacts:
+    reports:
+      dependency_scanning: gl-dependency-scanning-report.json
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+
 push:
   extends: .push-template
   needs:
     - build
+
+container-security:
+  stage: push
+  image: anchore/scan-action:latest
+  script:
+    - anchore-cli image add ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA
+    - anchore-cli image vuln ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA all
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
 
 deploy:
   extends: .deploy-template
