@@ -42,7 +42,7 @@ build:
 
 
 sast:
-  stage: test
+  stage: sast-scan
   script:
     - echo "Running SAST scan"
   rules:
@@ -50,13 +50,13 @@ sast:
 
 sca:
   extends: dependency_scanning
-  stage: test
+  stage: sast-scan
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
 container_security:
   extends: container_scanning
-  stage: test
+  stage: container-scan
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
