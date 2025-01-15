@@ -39,8 +39,7 @@ pre-commit:
 build:
  extends: .build-template
  stage: build
- needs:
-   - dependency_scanning
+
 
 container_scanning:
  stage: security
