@@ -20,6 +20,9 @@ variables:
  GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
  GITHUB_REPO_NAME: Customer-KubernetesFiles
  GITLAB_REPO: aseds6001802/customer-kubernetesfiles
+ CS_IMAGE: "registry.gitlab.com/aseds02/pitstop-customer/main:$CI_COMMIT_SHA"
+ CS_DOCKERFILE_PATH: "pitstop-customer/Dockerfile" 
+ SECURE_LOG_LEVEL: "debug"
 
 pre-commit:
  image: python:3.9
