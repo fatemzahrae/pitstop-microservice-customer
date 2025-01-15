@@ -1,66 +1,72 @@
 include:
-  - local: 'ci-templates.yml'
-  - template: Security/SAST.gitlab-ci.yml
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
-  - template: Security/Container-Scanning.gitlab-ci.yml
+ - local: 'ci-templates.yml'
+ - template: Security/SAST.gitlab-ci.yml
+ - template: Security/Dependency-Scanning.gitlab-ci.yml
+ - template: Security/Container-Scanning.gitlab-ci.yml
 
 variables:
-  SERVICE_PATH: pitstop-customer
-  SERVICE_NAME: pitstop-customer
-  DOCKER_USERNAME: fatemzahra
-  DOCKER_IMAGE: fatemzahra/pitstop-customer
-  GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
-  GITHUB_REPO_NAME: Customer-KubernetesFiles
-  GITLAB_REPO: aseds6001802/customer-kubernetesfiles
+ SERVICE_PATH: pitstop-customer
+ SERVICE_NAME: pitstop-customer
+ DOCKER_USERNAME: fatemzahra
+ DOCKER_IMAGE: fatemzahra/pitstop-customer
+ GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
+ GITHUB_REPO_NAME: Customer-KubernetesFiles
+ GITLAB_REPO: aseds6001802/customer-kubernetesfiles
 
 stages:
-  - pre-commit
-  - test
-  - build
-  - container-scan
-  - push
-  - deploy
+ - pre-commit
+ - sast
+ - sca
+ - build
+ - security
+ - push
+ - deploy
 
 pre-commit:
-  image: python:3.9
-  stage: pre-commit
-  before_script:
-    - pip install pre-commit
-  script:
-    - pre-commit install
-    - git config --global user.email "ci@bot.com"
-    - git config --global user.name "CI Bot"
-    - pre-commit run --all-files || (git add . && git commit -m "Fix pre-commit issues")
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
+ image: python:3.9
+ stage: pre-commit
+ before_script:
+   - pip install pre-commit
+ script:
+   - pre-commit install
+   - git config --global user.email "ci@bot.com"
+   - git config --global user.name "CI Bot"
+   - pre-commit run --all-files || (git add . && git commit -m "Fix pre-commit issues")
+ rules:
+   - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
 
+sast:
+ stage: sast
+ needs:
+   - pre-commit
+ rules:
+   - if: '$CI_COMMIT_BRANCH == "main"'
+
+dependency_scanning:
+ stage: sca
+ needs:
+   - sast
+ rules:
+   - if: '$CI_COMMIT_BRANCH == "main"'
 
 build:
-  extends: .build-template
-  stage: build
-  needs:
-    - dependency_scanning
+ extends: .build-template
+ needs:
+   - dependency_scanning
 
 container_scanning:
-  stage: container-scan
-  image: registry.gitlab.com/security-products/container-scanning:latest
-  variables:
-    CS_DOCKERFILE_PATH: "pitstop-customer/Dockerfile"
-    CS_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-    GIT_STRATEGY: clone
-  needs:
-    - build
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+ stage: security
+ needs:
+   - build
+ rules:
+   - if: '$CI_COMMIT_BRANCH == "main"'
 
 push:
-  extends: .push-template
-  stage: push
-  needs:
-    - container_scanning
+ extends: .push-template
+ needs:
+   - container_scanning
 
 deploy:
-  extends: .deploy-template
-  stage: deploy
-  needs:
-    - push
+ extends: .deploy-template
+ needs:
+   - push
