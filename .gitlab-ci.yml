@@ -1,5 +1,10 @@
 include:
   - local: 'ci-templates.yml'
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml
+  - template: Security/DAST.gitlab-ci.yml
+
 
 variables:
   SERVICE_PATH: pitstop-customer
@@ -35,20 +40,10 @@ build:
     - pre-commit
 
 sast:
-  stage: build
-  image: registry.gitlab.com/gitlab-org/security-products/analyzers/sast:latest
-  artifacts:
-    reports:
-      sast: gl-sast-report.json
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
 sca:
-  stage: build
-  image: registry.gitlab.com/gitlab-org/security-products/analyzers/dependency-scanning:latest
-  artifacts:
-    reports:
-      dependency_scanning: gl-dependency-scanning-report.json
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
@@ -58,12 +53,7 @@ push:
   needs:
     - build
 
-container-security:
-  stage: push
-  image: anchore/scan-action:latest
-  script:
-    - anchore-cli image add ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA
-    - anchore-cli image vuln ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA all
+container_security:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
