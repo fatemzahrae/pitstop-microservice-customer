@@ -44,6 +44,7 @@ sast:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
 sca:
+  extends: dependency_scanning
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
@@ -54,6 +55,7 @@ push:
     - build
 
 container_security:
+  extends: container_scanning
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
