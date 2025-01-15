@@ -5,7 +5,6 @@ include:
   - template: Security/Container-Scanning.gitlab-ci.yml
   - template: Security/DAST.gitlab-ci.yml
 
-
 variables:
   SERVICE_PATH: pitstop-customer
   SERVICE_NAME: pitstop-customer
@@ -17,10 +16,10 @@ variables:
   
 stages:
   - pre-commit
+  - test          
   - build
   - push
   - deploy
-
 
 pre-commit:
   image: python:3.9
@@ -33,32 +32,33 @@ pre-commit:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
 
-
 build:
   extends: .build-template
   needs:
     - pre-commit
 
 sast:
+  extends: sast
+  stage: test     
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
 sca:
   extends: dependency_scanning
+  stage: test     
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
+container_security:
+  extends: container_scanning
+  stage: test     
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 push:
   extends: .push-template
   needs:
     - build
-
-container_security:
-  extends: container_scanning
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
 
 deploy:
   extends: .deploy-template
