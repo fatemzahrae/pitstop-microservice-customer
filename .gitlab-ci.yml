@@ -35,36 +35,17 @@ pre-commit:
  rules:
    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
 
-sast:
- stage: sast
- needs:
-   - pre-commit
- rules:
-   - if: '$CI_COMMIT_BRANCH == "main"'
-
-dependency_scanning:
- stage: sca
- needs:
-   - sast
- rules:
-   - if: '$CI_COMMIT_BRANCH == "main"'
+# Let the templates handle the security-related jobs like sast, dependency_scanning, and container_scanning
 
 build:
  extends: .build-template
  needs:
    - dependency_scanning
 
-container_scanning:
- stage: security
- needs:
-   - build
- rules:
-   - if: '$CI_COMMIT_BRANCH == "main"'
-
 push:
  extends: .push-template
  needs:
-   - container_scanning
+   - build
 
 deploy:
  extends: .deploy-template
