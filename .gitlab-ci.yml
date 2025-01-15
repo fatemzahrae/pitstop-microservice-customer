@@ -6,7 +6,7 @@ include:
 
 stages:
  - pre-commit
- - sast
+ - test
  - sca
  - build
  - security
@@ -35,10 +35,6 @@ pre-commit:
  rules:
    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
 
-sast:
- stage: sast # Override the stage to match your pipeline definition
- rules:
-   - if: '$CI_COMMIT_BRANCH == "main"'
 
 dependency_scanning:
  stage: sca
