@@ -15,8 +15,10 @@ variables:
 
 stages:
   - pre-commit
+  - sast
+  - sca
   - build
-  - test
+  - container-scan
   - push
   - deploy
 
@@ -33,17 +35,46 @@ pre-commit:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
 
-build:
-  extends: .build-template
+sast:
+  stage: sast
   needs:
     - pre-commit
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+dependency_scanning:
+  stage: sca
+  needs:
+    - sast
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+build:
+  extends: .build-template
+  stage: build
+  needs:
+    - dependency_scanning
+
+container_scanning:
+  stage: container-scan
+  image: registry.gitlab.com/security-products/container-scanning:latest
+  variables:
+    CS_DOCKERFILE_PATH: "pitstop-customer/Dockerfile"
+    CS_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    GIT_STRATEGY: clone
+  needs:
+    - build
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 push:
   extends: .push-template
+  stage: push
   needs:
-    - build
+    - container_scanning
 
 deploy:
   extends: .deploy-template
+  stage: deploy
   needs:
     - push
