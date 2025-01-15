@@ -63,7 +63,7 @@ container_security:
 push:
   extends: .push-template
   needs:
-    - build
+    - build 
 
 deploy:
   extends: .deploy-template
