@@ -4,7 +4,6 @@ include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - template: Security/Container-Scanning.gitlab-ci.yml
 
-
 variables:
   SERVICE_PATH: pitstop-customer
   SERVICE_NAME: pitstop-customer
@@ -13,12 +12,11 @@ variables:
   GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
   GITHUB_REPO_NAME: Customer-KubernetesFiles
   GITLAB_REPO: aseds6001802/customer-kubernetesfiles
-  
+
 stages:
   - pre-commit
   - build
-  - sast-scan
-  - container-scan
+  - test
   - push
   - deploy
 
@@ -40,30 +38,10 @@ build:
   needs:
     - pre-commit
 
-
-sast:
-  stage: sast-scan
-  script:
-    - echo "Running SAST scan"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
-sca:
-  extends: dependency_scanning
-  stage: sast-scan
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
-container_security:
-  extends: container_scanning
-  stage: container-scan
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
 push:
   extends: .push-template
   needs:
-    - build 
+    - build
 
 deploy:
   extends: .deploy-template
