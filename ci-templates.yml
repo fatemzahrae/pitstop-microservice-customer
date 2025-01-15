@@ -1,29 +1,9 @@
-.vault-config: &vault-config
-  before_script:
-    - apk add --no-cache curl 
-    - echo "Checking Vault server connectivity at $VAULT_SERVER_URL"
-    - curl -s $VAULT_SERVER_URL/v1/sys/health || (echo "Vault server is not reachable at $VAULT_SERVER_URL" && exit 1)
-
-    - echo "Authenticating with Vault..."
-    - vault login -method=jwt role=$VAULT_AUTH_ROLE jwt=$CI_JOB_JWT || (echo "Vault authentication failed" && exit 1)
-
-    - echo "Fetching secrets from Vault..."
-    - export DOCKER_USERNAME="$(vault kv get -field=DOCKER_USERNAME secret/pitstopsecrets || exit 1)"
-    - export DOCKER_HUB_PASSWORD="$(vault kv get -field=DOCKER_HUB_PASSWORD secret/pitstopsecrets || exit 1)"
-    - export GITHUB_TOKEN="$(vault kv get -field=GITHUB_TOKEN secret/pitstopsecrets || exit 1)"
-    - export GITLAB_TOKEN="$(vault kv get -field=GITLAB_TOKEN secret/pitstopsecrets || exit 1)"
-
-
-
 .build-template:
   image: hashicorp/vault:latest
   services:
     - docker:dind
   variables:
     DOCKER_TLS_CERTDIR: ""
-    VAULT_SERVER_URL: "http://172.20.0.2:8200" # Updated Vault server URL
-    VAULT_AUTH_ROLE: "myproject-staging-123" # Example role name
-  <<: *vault-config
   stage: build
   script:
     - cd ${SERVICE_PATH}
@@ -46,9 +26,6 @@
     - docker:dind
   variables:
     DOCKER_TLS_CERTDIR: ""
-    VAULT_SERVER_URL: "http://172.20.0.2:8200" # Updated Vault server URL
-    VAULT_AUTH_ROLE: "myproject-staging-123" # Example role name
-  <<: *vault-config
   stage: push
   script:
     - echo "$DOCKER_HUB_PASSWORD" | docker login -u "${DOCKER_USERNAME}" --password-stdin
@@ -67,9 +44,6 @@
   image: alpine:latest
   variables:
     GIT_STRATEGY: clone
-    VAULT_SERVER_URL: "http://172.20.0.2:8200" # Updated Vault server URL
-    VAULT_AUTH_ROLE: "myproject-staging-123" # Example role name
-  <<: *vault-config
   before_script:
     - apk add --no-cache git curl
     - curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
