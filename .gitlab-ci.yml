@@ -28,6 +28,8 @@ pre-commit:
     - pip install pre-commit
   script:
     - pre-commit install
+    - git config --global user.email "ci@bot.com"
+    - git config --global user.name "CI Bot"
     - pre-commit run --all-files || (git add . && git commit -m "Fix pre-commit issues")
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
