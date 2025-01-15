@@ -1,17 +1,8 @@
 include:
  - local: 'ci-templates.yml'
- - template: Security/SAST.gitlab-ci.yml
- - template: Security/Dependency-Scanning.gitlab-ci.yml
- - template: Security/Container-Scanning.gitlab-ci.yml
-
-variables:
- SERVICE_PATH: pitstop-customer
- SERVICE_NAME: pitstop-customer
- DOCKER_USERNAME: fatemzahra
- DOCKER_IMAGE: fatemzahra/pitstop-customer
- GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
- GITHUB_REPO_NAME: Customer-KubernetesFiles
- GITLAB_REPO: aseds6001802/customer-kubernetesfiles
+ - template: 'Security/SAST.gitlab-ci.yml'
+ - template: 'Security/Dependency-Scanning.gitlab-ci.yml'
+ - template: 'Security/Container-Scanning.gitlab-ci.yml'
 
 stages:
  - pre-commit
@@ -21,6 +12,15 @@ stages:
  - security
  - push
  - deploy
+
+variables:
+ SERVICE_PATH: pitstop-customer
+ SERVICE_NAME: pitstop-customer
+ DOCKER_USERNAME: fatemzahra
+ DOCKER_IMAGE: fatemzahra/pitstop-customer
+ GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
+ GITHUB_REPO_NAME: Customer-KubernetesFiles
+ GITLAB_REPO: aseds6001802/customer-kubernetesfiles
 
 pre-commit:
  image: python:3.9
@@ -35,19 +35,37 @@ pre-commit:
  rules:
    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
 
-# Let the templates handle the security-related jobs like sast, dependency_scanning, and container_scanning
+sast:
+ stage: sast # Override the stage to match your pipeline definition
+ rules:
+   - if: '$CI_COMMIT_BRANCH == "main"'
+
+dependency_scanning:
+ stage: sca
+ rules:
+   - if: '$CI_COMMIT_BRANCH == "main"'
 
 build:
  extends: .build-template
+ stage: build
  needs:
    - dependency_scanning
 
-push:
- extends: .push-template
+container_scanning:
+ stage: security
  needs:
    - build
+ rules:
+   - if: '$CI_COMMIT_BRANCH == "main"'
+
+push:
+ extends: .push-template
+ stage: push
+ needs:
+   - container_scanning
 
 deploy:
  extends: .deploy-template
+ stage: deploy
  needs:
    - push
