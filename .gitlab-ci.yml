@@ -36,13 +36,6 @@ pre-commit:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main"'
 
 
-dependency_scanning:
-  stage: sca
-  needs:
-    - sast
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
 build:
   extends: .build-template
   stage: build
