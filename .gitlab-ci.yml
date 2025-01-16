@@ -8,7 +8,6 @@ stages:
  - pre-commit
  - test
  - build
- - security
  - push
  - deploy
 
@@ -21,8 +20,6 @@ variables:
  GITHUB_REPO_NAME: Customer-KubernetesFiles
  GITLAB_REPO: aseds6001802/customer-kubernetesfiles
  CS_DOCKERFILE_PATH: "pitstop-customer/Dockerfile" 
- #DOCKER_IMAGE: "registry.gitlab.com/aseds02/pitstop-customer/main"
-#CS_IMAGE: "registry.gitlab.com/aseds02/pitstop-customer/main:$CI_COMMIT_SHORT_SHA"
  SECURE_LOG_LEVEL: "debug"
 
 pre-commit:
