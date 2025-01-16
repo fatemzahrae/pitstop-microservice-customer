@@ -46,15 +46,22 @@ build:
 
 
 container_scanning:
-  image: registry.gitlab.com/security-products/container-scanning:5
+  image: docker:latest
+  services:
+    - docker:dind
   stage: security
   dependencies:
-    - build
+    - build 
+  before_script:
+    - apk add curl
+    - curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh -o install-scout.sh
+    - sh install-scout.sh
   script:
     - docker load < images/image.tar
-  variables:
-    CS_DEFAULT_BRANCH_IMAGE: $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker scout cves ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA --format json > gl-container-scanning-report.json
   artifacts:
+    paths:
+      - gl-container-scanning-report.json
     reports:
       container_scanning: gl-container-scanning-report.json
   rules:
