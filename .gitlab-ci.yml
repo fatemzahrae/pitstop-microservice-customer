@@ -46,7 +46,7 @@ build:
 
 
 container_scanning:
-  image: aquasec/trivy:latest
+  image: aquasec/trivy:0.44.0
   stage: security
   dependencies:
     - build
@@ -54,11 +54,12 @@ container_scanning:
     - docker:dind
   script:
     - docker load < images/image.tar
-    - trivy image ${DOCKER_IMAGE}:${CI_COMMIT_SHORT_SHA} 
-      --format json 
-      --output gl-container-scanning-report.json 
-      --severity HIGH,CRITICAL
-      --exit-code 0
+    - trivy --version
+    - trivy image ${DOCKER_IMAGE}:${CI_COMMIT_SHORT_SHA} \
+        --format json \
+        --output gl-container-scanning-report.json \
+        --severity HIGH,CRITICAL \
+        --exit-code 0
   artifacts:
     reports:
       container_scanning: gl-container-scanning-report.json
@@ -66,6 +67,7 @@ container_scanning:
       - gl-container-scanning-report.json
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+
 
 push:
  extends: .push-template
