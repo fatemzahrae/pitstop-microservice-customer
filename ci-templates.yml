@@ -48,18 +48,23 @@
     - apk add --no-cache git curl
     - curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     - chmod +x /usr/local/bin/yq
-    - git config --global user.email "gitlab-ci@example.com"
+    - git config --global user.email "gitlab-ci@git.com"
     - git config --global user.name "GitLab CI"
   script:
     - git clone "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
     - cd ${GITHUB_REPO_NAME}/k8s
     - yq e -i 'select(.kind == "Deployment").spec.template.spec.containers[] |= select(.name == "'${SERVICE_NAME}'").image = "'${DOCKER_IMAGE}':'$CI_COMMIT_SHORT_SHA'"' ${SERVICE_NAME}-depl.yaml
     - git add .
-    - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
-    - git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" HEAD:main
-    - cd ..
-    - echo "Attempting direct push to GitLab..."
-    - git push "https://${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git" main
-
+    # Check if there are changes to commit
+    - |
+      if git diff --staged --quiet; then
+        echo "No changes to commit"
+        exit 0
+      else
+        git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
+        git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" HEAD:main
+        cd ..
+        git push "https://oauth2:${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git" main
+      fi
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
