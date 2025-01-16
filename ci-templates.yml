@@ -80,8 +80,13 @@
     - cd ${GITHUB_REPO_NAME}/k8s
     - yq e -i 'select(.kind == "Deployment").spec.template.spec.containers[] |= select(.name == "'${SERVICE_NAME}'").image = "'${DOCKER_IMAGE}':'$CI_COMMIT_SHORT_SHA'"' ${SERVICE_NAME}-depl.yaml
     - git add .
-    - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
-    - git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" HEAD:main
+    - |
+      if git diff --staged --quiet; then
+        echo "No changes to commit, skipping..."
+      else
+        git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
+        git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" HEAD:main
+      fi
     - cd ..
     - git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git"
     - git fetch gitlab main
