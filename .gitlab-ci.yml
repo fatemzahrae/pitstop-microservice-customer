@@ -45,24 +45,35 @@ build:
  stage: build
 
 
-container_scanning:
-  image: snyk/snyk:alpine
-  stage: security
-  before_script:
-    # Authenticate Snyk CLI with API token 
-    - echo "$SNYK_TOKEN" | snyk auth
+
+container-scan:
+  stage: test
+  image:
+    name: snyk/snyk:docker
+    entrypoint: [""]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  services:
+    - docker:20.10.11-dind
   script:
-   
+    # Verify the tarball exists
     - ls -l images/image.tar
-    - snyk container test images/image.tar --json-file-output=gl-container-scanning-report.json --severity-threshold=high
+    # Load the image from the tarball
+    - docker load < images/image.tar
+    # List images to confirm successful loading
+    - docker images
+    # Authenticate with Snyk
+    - snyk auth $SNYK_TOKEN
+    # Get the loaded image ID
+    - IMAGE_ID=$(docker images --format "{{.Repository}}:{{.Tag}}" | head -n 1)
+    - snyk container test $IMAGE_ID --severity-threshold=high
+
   artifacts:
-    reports:
-      container_scanning: gl-container-scanning-report.json
     paths:
-      - gl-container-scanning-report.json
+      - snyk_report.json
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-
 
 push:
  extends: .push-template
