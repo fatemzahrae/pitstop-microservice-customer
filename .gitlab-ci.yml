@@ -9,6 +9,7 @@ stages:
  - test
  - build
  - push
+ - security
  - deploy
 
 variables:
@@ -46,7 +47,7 @@ push:
  extends: .push-template
  stage: push
  needs:
-   - container_scanning
+   - build
 
 deploy:
  extends: .deploy-template
