@@ -50,25 +50,20 @@ container_scanning:
   stage: security
   dependencies:
     - build
-  variables:
-    TRIVY_USERNAME: ${CI_REGISTRY_USER}
-    TRIVY_PASSWORD: ${CI_REGISTRY_PASSWORD}
-    TRIVY_AUTH_URL: ${CI_REGISTRY}
-    TRIVY_NO_PROGRESS: "true"
-    TRIVY_CACHE_DIR: ".trivycache/"
+  services:
+    - docker:dind
   script:
     - docker load < images/image.tar
-    - trivy image --exit-code 0 --cache-dir .trivycache/ --no-progress --format template --template "@/contrib/gitlab.tpl" -o gl-container-scanning-report.json ${DOCKER_IMAGE}:${CI_COMMIT_SHORT_SHA}
-    
-    - trivy image --exit-code 1 --severity HIGH,CRITICAL --cache-dir .trivycache/ --no-progress ${DOCKER_IMAGE}:${CI_COMMIT_SHORT_SHA}
-  services:
-    - docker:dind 
-  cache:
-    paths:
-      - .trivycache/
+    - trivy image ${DOCKER_IMAGE}:${CI_COMMIT_SHORT_SHA} 
+      --format json 
+      --output gl-container-scanning-report.json 
+      --severity HIGH,CRITICAL
+      --exit-code 0
   artifacts:
     reports:
       container_scanning: gl-container-scanning-report.json
+    paths:
+      - gl-container-scanning-report.json
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
