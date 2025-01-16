@@ -44,36 +44,16 @@ build:
  extends: .build-template
  stage: build
 
-
-
-container-scan:
-  stage: test
-  image:
-    name: snyk/snyk:docker
-    entrypoint: [""]
+container_scanning:
+  stage: security
   variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-  services:
-    - docker:20.10.11-dind
-  script:
-    # Verify the tarball exists
-    - ls -l images/image.tar
-    # Load the image from the tarball
-    - docker load < images/image.tar
-    # List images to confirm successful loading
-    - docker images
-    # Authenticate with Snyk
-    - snyk auth $SNYK_TOKEN
-    # Get the loaded image ID
-    - IMAGE_ID=$(docker images --format "{{.Repository}}:{{.Tag}}" | head -n 1)
-    - snyk container test $IMAGE_ID --severity-threshold=high
-
-  artifacts:
-    paths:
-      - snyk_report.json
+    CS_IMAGE: "${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA" # Image built in the build stage
+    CS_DOCKERFILE_PATH: "${SERVICE_PATH}/Dockerfile" # Path to your Dockerfile
+  dependencies:
+    - build 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+
 
 push:
  extends: .push-template
