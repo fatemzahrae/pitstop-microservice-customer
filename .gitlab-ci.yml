@@ -81,14 +81,14 @@ container_scanning:
     - docker load < images/image.tar
     - TAG=$(docker images | grep "$DOCKER_IMAGE" | awk '{print $2}')
     - export CS_IMAGE="${DOCKER_IMAGE}:${TAG}"
-
-
   script:
-    - gtcs scan --image "$CS_IMAGE"
+    - gtcs scan "$CS_IMAGE"
 
   artifacts:
     reports:
       container_scanning: gl-container-scanning-report.json
+    paths:
+      - gl-container-scanning-report.json
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request" || $CI_COMMIT_BRANCH == "main"
 
