@@ -51,9 +51,9 @@
   <<: *vault-config
   stage: push
   script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+  #  - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
 
-   # - echo "$DOCKER_HUB_PASSWORD" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+    - echo "$DOCKER_HUB_PASSWORD" | docker login -u "${DOCKER_USERNAME}" --password-stdin
     - docker load < images/image.tar
     - docker push ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA
     - |
