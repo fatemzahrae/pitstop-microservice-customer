@@ -81,7 +81,7 @@ container_scanning:
     - docker load < images/image.tar
     - TAG=$(docker images | grep "$DOCKER_IMAGE" | awk '{print $2}')
     - export CS_IMAGE="${DOCKER_IMAGE}:${TAG}"
-    - echo "Resolved image to scan: $CS_IMAGE"
+
 
   script:
     - gtcs scan --image "$CS_IMAGE"
