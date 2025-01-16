@@ -46,7 +46,7 @@ build:
 
 
 container_scanning:
-  image: snyk/snyk-cli:latest
+  image: snyk/snyk:alpine
   stage: security
   before_script:
     # Authenticate Snyk CLI with API token 
