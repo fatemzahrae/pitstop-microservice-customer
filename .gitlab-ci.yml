@@ -44,16 +44,6 @@ build:
  extends: .build-template
  stage: build
 
-container_scanning:
-  stage: security
-  variables:
-    CS_IMAGE: "${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA" # Image built in the build stage
-    CS_DOCKERFILE_PATH: "${SERVICE_PATH}/Dockerfile" # Path to your Dockerfile
-  dependencies:
-    - build 
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
 
 push:
  extends: .push-template
