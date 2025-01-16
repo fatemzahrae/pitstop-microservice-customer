@@ -1,5 +1,8 @@
 include:
   - local: 'ci-templates.yml'
+  - template: 'Security/SAST.gitlab-ci.yml'
+  - template: 'Security/Dependency-Scanning.gitlab-ci.yml'
+  - template: 'Security/Container-Scanning.gitlab-ci.yml'
 
 variables:
   SERVICE_PATH: pitstop-customer
@@ -12,7 +15,10 @@ variables:
  
 stages:
   - pre-commit
+  - sast
+  - sca
   - build
+  - container_security
   - push
   - deploy
 
@@ -27,16 +33,58 @@ pre-commit:
     - git config --global user.name "CI Bot"        
     - pre-commit run --all-files || (git add . && git commit -m "Fix pre-commit issues")
     - pre-commit run --all-files || (git add . && git commit -m "Fix pre-commit issues")
-
-
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
+
+sast:
+  stage: sast
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+  allow_failure: false
+
+dependency_scanning:
+  stage: sca
+  script:
+    - echo "Running Dependency Scanning"
+  artifacts:
+    reports:
+      dependency_scanning: sca-results.json
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request" || $CI_COMMIT_BRANCH == "main"
 
 build:
   extends: .build-template
   needs:
     - pre-commit
+
+container_scanning:
+  tags:
+    - gitlab-org-docker
+  image: registry.gitlab.com/security-products/container-scanning:latest
+  services:
+    - docker:dind
+  stage: container_security
+  dependencies:
+    - build
+  variables:
+    CS_DOCKERFILE_PATH: "${SERVICE_PATH}/Dockerfile"
+    DOCKER_IMAGE: ${DOCKER_IMAGE}
+    CS_IMAGE: "${DOCKER_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+    GIT_STRATEGY: fetch
+    DOCKER_TLS_CERTDIR: ""
+    USER: root
+    DOCKER_HOST: "tcp://docker:2375"
+  before_script:
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq -y docker.io
+    - docker load < images/image.tar
+  artifacts:
+    reports:
+      container_scanning: gl-container-scanning-report.json
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request" || $CI_COMMIT_BRANCH == "main"
 
 push:
   extends: .push-template
