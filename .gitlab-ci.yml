@@ -16,13 +16,13 @@ variables:
  SERVICE_PATH: pitstop-customer
  SERVICE_NAME: pitstop-customer
  DOCKER_USERNAME: fatemzahra
- #DOCKER_IMAGE: fatemzahra/pitstop-customer
+ DOCKER_IMAGE: fatemzahra/pitstop-customer
  GITHUB_REPO: fatemzahrae/Customer-KubernetesFiles
  GITHUB_REPO_NAME: Customer-KubernetesFiles
  GITLAB_REPO: aseds6001802/customer-kubernetesfiles
  CS_DOCKERFILE_PATH: "pitstop-customer/Dockerfile" 
- DOCKER_IMAGE: "registry.gitlab.com/aseds02/pitstop-customer/main"
- CS_IMAGE: "registry.gitlab.com/aseds02/pitstop-customer/main:$CI_COMMIT_SHORT_SHA"
+ #DOCKER_IMAGE: "registry.gitlab.com/aseds02/pitstop-customer/main"
+#CS_IMAGE: "registry.gitlab.com/aseds02/pitstop-customer/main:$CI_COMMIT_SHORT_SHA"
  SECURE_LOG_LEVEL: "debug"
 
 pre-commit:
@@ -46,11 +46,22 @@ build:
 
 
 container_scanning:
- stage: security
- needs:
-   - build
- rules:
-   - if: '$CI_COMMIT_BRANCH == "main"'
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: security
+  dependencies:
+    - build 
+  script:
+    - docker load < images/image.tar
+    - docker scan ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA --json > gl-container-scanning-report.json
+  artifacts:
+    paths:
+      - gl-container-scanning-report.json
+    reports:
+      container_scanning: gl-container-scanning-report.json
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 push:
  extends: .push-template
