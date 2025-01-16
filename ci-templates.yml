@@ -58,7 +58,7 @@
     - git commit -m "Update image tag to $CI_COMMIT_SHORT_SHA [skip ci]"
     - git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" HEAD:main
     - cd ..
-    - git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git"
+    - git remote add gitlab "https://${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git"
     - git fetch gitlab main
     - git merge gitlab/main --no-edit
     - git push gitlab main
