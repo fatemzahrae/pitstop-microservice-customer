@@ -46,18 +46,27 @@ build:
 
 
 container_scanning:
-  image: docker/scout-cli
-  services:
-    - docker:dind
+  image: aquasec/trivy:latest
   stage: security
   dependencies:
-    - build 
+    - build
+  variables:
+    TRIVY_USERNAME: ${CI_REGISTRY_USER}
+    TRIVY_PASSWORD: ${CI_REGISTRY_PASSWORD}
+    TRIVY_AUTH_URL: ${CI_REGISTRY}
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_CACHE_DIR: ".trivycache/"
   script:
     - docker load < images/image.tar
-    - docker scout quickview ${DOCKER_IMAGE}:$CI_COMMIT_SHORT_SHA --output json > gl-container-scanning-report.json
-  artifacts:
+    - trivy image --exit-code 0 --cache-dir .trivycache/ --no-progress --format template --template "@/contrib/gitlab.tpl" -o gl-container-scanning-report.json ${DOCKER_IMAGE}:${CI_COMMIT_SHORT_SHA}
+    
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL --cache-dir .trivycache/ --no-progress ${DOCKER_IMAGE}:${CI_COMMIT_SHORT_SHA}
+  services:
+    - docker:dind 
+  cache:
     paths:
-      - gl-container-scanning-report.json
+      - .trivycache/
+  artifacts:
     reports:
       container_scanning: gl-container-scanning-report.json
   rules:
